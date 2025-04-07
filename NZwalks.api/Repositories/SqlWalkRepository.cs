@@ -34,9 +34,35 @@ namespace NZwalks.api.Repositories
             return existing;
         }
 
-        public async Task<List<Walk>> GetAllAsync()
+        public async Task<List<Walk>> GetAllAsync(string? filterOn=null, string? filterQuery=null
+            , string? sortBy = null, bool? isAscending = true,
+            int pageNumber = 1, int pageSize = 1000)
         {
-            return await dbContext.walks.Include("Difficulty").Include("Region").ToListAsync();
+            var walks = dbContext.walks.Include("Difficulty").Include("Region").AsQueryable();
+            //Filter
+            if(string.IsNullOrWhiteSpace(filterOn)==false&&string.IsNullOrWhiteSpace(filterQuery)==false)
+            {
+                if(filterOn.Equals("name",StringComparison.OrdinalIgnoreCase))
+                {
+                    walks = walks.Where(x => x.Name.Contains(filterQuery));
+                }
+            }
+            //Sorting 
+            if(string.IsNullOrWhiteSpace(sortBy)==false)
+            {
+                var ascending = isAscending ?? true;
+                if (sortBy.Equals("Name", StringComparison.OrdinalIgnoreCase))
+                {
+                    walks = ascending ? walks.OrderBy(u => u.Name) : walks.OrderByDescending(u => u.Name);
+                }
+                else if (sortBy.Equals("Length", StringComparison.OrdinalIgnoreCase))
+                {
+                    walks = ascending ? walks.OrderBy(u => u.LengthInKm) : walks.OrderByDescending(u => u.LengthInKm);
+                }
+            }
+            //Pagenation
+            var skipResult = (pageNumber - 1) * pageSize;
+            return await walks.Skip(skipResult).Take(pageSize).ToListAsync();
         }
 
         public async Task<Walk?> GetByIdAsync(Guid id)
