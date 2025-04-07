@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using NZwalks.api.CustomActionFilters;
 using NZwalks.api.Data;
 using NZwalks.api.Models.Domain;
 using NZwalks.api.Models.DTO;
@@ -49,6 +50,7 @@ namespace NZwalks.api.Controllers
 
         }
         [HttpPost]
+        [ValidateModelAttributes]
         public async Task<IActionResult> Create([FromBody] AddRegionRequestDto addRegionRequestDto)
         {
 
@@ -59,11 +61,14 @@ namespace NZwalks.api.Controllers
             //convert from Domain Model TO Dto
             var regionDto = mapper.Map<RegionDto>(regionDomainModel);
             return CreatedAtAction(nameof(GetById), new { Id = regionDto.Id }, regionDto);
+
         }
         [HttpPut]
         [Route("{id:guid}")]
+        [ValidateModelAttributes]
         public async Task<IActionResult> UpdateById([FromRoute] Guid id, UpdateRegionRequestDto updateRegionRequestDto)
         {
+
             //Map/Convert from DTO to Domail model
             var regionDomainModel = mapper.Map<Region>(updateRegionRequestDto);
             regionDomainModel = await iRegionRepository.UpdateAsync(id, regionDomainModel);
@@ -75,6 +80,7 @@ namespace NZwalks.api.Controllers
 
 
             return Ok(mapper.Map<RegionDto>(regionDomainModel));
+
         }
         [HttpDelete]
         [Route("{id:guid}")]
