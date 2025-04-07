@@ -23,6 +23,8 @@ namespace NZwalks.api
                 options.UseSqlServer(builder.Configuration.GetConnectionString("con"));
             });
             builder.Services.AddScoped<IRegionRepository, SqlRegionRepository>();
+            builder.Services.AddScoped<IWalkRepository, SqlWalkRepository>();
+
             builder.Services.AddAutoMapper(typeof(AutoMapperProfiles));
 
             var app = builder.Build();
