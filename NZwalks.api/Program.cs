@@ -1,8 +1,13 @@
 
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using NZwalks.api.Data;
 using NZwalks.api.Mapping;
 using NZwalks.api.Repositories;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.OpenApi.Models;
 
 namespace NZwalks.api
 {
@@ -17,15 +22,78 @@ namespace NZwalks.api
             builder.Services.AddControllers();
             // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
             builder.Services.AddEndpointsApiExplorer();
-            builder.Services.AddSwaggerGen();
+            builder.Services.AddSwaggerGen(options =>
+            {
+                var securityScheme = new OpenApiSecurityScheme
+                {
+                    Name = "Authorization",
+                    Description = "Enter 'Bearer' [space] and then your valid JWT token.",
+                    In = ParameterLocation.Header,
+                    Type = SecuritySchemeType.Http,
+                    Scheme = "bearer",
+                    BearerFormat = "JWT",
+                    Reference = new OpenApiReference
+                    {
+                        Type = ReferenceType.SecurityScheme,
+                        Id = JwtBearerDefaults.AuthenticationScheme
+                    }
+                };
+
+                options.AddSecurityDefinition(JwtBearerDefaults.AuthenticationScheme, securityScheme);
+
+                options.AddSecurityRequirement(new OpenApiSecurityRequirement
+                    {
+                        {
+                            securityScheme,
+                            Array.Empty<string>()
+                        }
+                    });
+                            });
             builder.Services.AddDbContext<NZWalksDbContext>(options =>
             {
                 options.UseSqlServer(builder.Configuration.GetConnectionString("con"));
             });
+            builder.Services.AddDbContext<NZWalksAuthDbContext>(options =>
+            {
+                options.UseSqlServer(builder.Configuration.GetConnectionString("conAuth"));
+            });
             builder.Services.AddScoped<IRegionRepository, SqlRegionRepository>();
             builder.Services.AddScoped<IWalkRepository, SqlWalkRepository>();
+            builder.Services.AddScoped<ITokenRepository, SqlTokenRepository>();
+
 
             builder.Services.AddAutoMapper(typeof(AutoMapperProfiles));
+
+            builder.Services.AddIdentityCore<IdentityUser>()
+                .AddRoles<IdentityRole>()
+                .AddTokenProvider<DataProtectorTokenProvider<IdentityUser>>("NZWalk")
+                .AddEntityFrameworkStores<NZWalksAuthDbContext>()
+                .AddDefaultTokenProviders();
+            builder.Services.Configure<IdentityOptions>(
+                option =>
+                {
+                    option.Password.RequireDigit = false;
+                    option.Password.RequireLowercase = false;
+                    option.Password.RequireUppercase = false;
+                    option.Password.RequireNonAlphanumeric = false;
+                    option.Password.RequiredLength = 6;
+                    option.Password.RequiredUniqueChars = 1;
+
+                }
+
+                );
+
+            builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+                .AddJwtBearer(options => options.TokenValidationParameters = new TokenValidationParameters
+                {
+                    ValidateIssuer = true,
+                    ValidateAudience = true,
+                    ValidateLifetime = true,
+                    ValidateIssuerSigningKey = true,
+                    ValidIssuer = builder.Configuration["Jwt:Issuer"],
+                    ValidAudience = builder.Configuration["Jwt:Audience"],
+                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]))
+                });
 
             var app = builder.Build();
 
@@ -37,6 +105,8 @@ namespace NZwalks.api
             }
 
             app.UseHttpsRedirection();
+
+            app.UseAuthentication();
 
             app.UseAuthorization();
 
