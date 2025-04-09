@@ -8,6 +8,7 @@ using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.OpenApi.Models;
+using Microsoft.Extensions.FileProviders;
 
 namespace NZwalks.api
 {
@@ -16,6 +17,7 @@ namespace NZwalks.api
         public static void Main(string[] args)
         {
             var builder = WebApplication.CreateBuilder(args);
+            builder.Services.AddHttpContextAccessor();
 
             // Add services to the container.
 
@@ -60,6 +62,8 @@ namespace NZwalks.api
             builder.Services.AddScoped<IRegionRepository, SqlRegionRepository>();
             builder.Services.AddScoped<IWalkRepository, SqlWalkRepository>();
             builder.Services.AddScoped<ITokenRepository, SqlTokenRepository>();
+            builder.Services.AddScoped<IImageRepository, loaclUploadImage>();
+
 
 
             builder.Services.AddAutoMapper(typeof(AutoMapperProfiles));
@@ -109,6 +113,11 @@ namespace NZwalks.api
             app.UseAuthentication();
 
             app.UseAuthorization();
+            app.UseStaticFiles(new StaticFileOptions
+            {
+                FileProvider=new PhysicalFileProvider(Path.Combine(Directory.GetCurrentDirectory(),"Images")),
+                RequestPath="/Images"
+            });
 
 
             app.MapControllers();

@@ -13,6 +13,7 @@ namespace NZwalks.api.Data
         public DbSet<Region> regions { get; set; }
 
         public DbSet<Walk> walks { get; set; }
+        public DbSet<Image> Images { get; set; }
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
