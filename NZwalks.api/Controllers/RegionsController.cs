@@ -1,4 +1,5 @@
-﻿using AutoMapper;
+﻿using System.Text.Json;
+using AutoMapper;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -13,29 +14,37 @@ namespace NZwalks.api.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    
+
     public class RegionsController : ControllerBase
     {
 
         private readonly NZWalksDbContext _DbContext;
         private readonly IRegionRepository iRegionRepository;
         private readonly IMapper mapper;
+        private readonly ILogger<RegionsController> logger;
 
-        public RegionsController(NZWalksDbContext DbContext, IRegionRepository iRegionRepository, IMapper mapper)
+        public RegionsController(NZWalksDbContext DbContext, IRegionRepository iRegionRepository, IMapper mapper, ILogger<RegionsController> logger)
         {
             _DbContext = DbContext;
             this.iRegionRepository = iRegionRepository;
             this.mapper = mapper;
+            this.logger = logger;
         }
         [HttpGet]
-        [Authorize(Roles ="Reader")]
+        // [Authorize(Roles ="Reader")]
         public async Task<IActionResult> GetAll()
         {
+
+            throw new Exception("this is custom exception");
             // Get Data From Database -DomainMOdels
             var regionsDomain = await iRegionRepository.GetAllAsync();
+            logger.LogInformation($"information After Invoked:{JsonSerializer.Serialize(regionsDomain)}");
+
             //Map/Convert From To Dto
 
             return Ok(mapper.Map<List<RegionDto>>(regionsDomain));
+
+
         }
 
         [HttpGet]

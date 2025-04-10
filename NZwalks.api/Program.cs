@@ -9,6 +9,8 @@ using System.Text;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.OpenApi.Models;
 using Microsoft.Extensions.FileProviders;
+using Serilog;
+using NZwalks.api.Middlewares;
 
 namespace NZwalks.api
 {
@@ -18,6 +20,14 @@ namespace NZwalks.api
         {
             var builder = WebApplication.CreateBuilder(args);
             builder.Services.AddHttpContextAccessor();
+            var logging = new LoggerConfiguration()
+                .WriteTo.Console()
+                .WriteTo.File("Logs/NZWalks-Log.txt",rollingInterval:RollingInterval.Minute)
+                .MinimumLevel.Information()
+                .CreateLogger();
+            builder.Logging.ClearProviders();
+            builder.Logging.AddSerilog(logging);
+                
 
             // Add services to the container.
 
@@ -107,7 +117,7 @@ namespace NZwalks.api
                 app.UseSwagger();
                 app.UseSwaggerUI();
             }
-
+            app.UseMiddleware<ExceptionErrorHandler>();
             app.UseHttpsRedirection();
 
             app.UseAuthentication();
